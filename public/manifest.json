@@ -1,0 +1,15 @@
+{
+  "short_name": "Kinecat Admin",
+  "name": "Kinecat Admin — Restablecer contraseña",
+  "icons": [
+    {
+      "src": "kinecat-mark.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#fafafa",
+  "background_color": "#ffffff"
+}
