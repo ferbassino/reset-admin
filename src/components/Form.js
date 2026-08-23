@@ -9,6 +9,88 @@ const API_BASE_URL =
   process.env.REACT_APP_API_URL || "https://kinapp-api.vercel.app/";
 const SUPPORT_EMAIL =
   process.env.REACT_APP_SUPPORT_EMAIL || "kinecatkinesiologia@gmail.com";
+const ADMIN_LOGIN_URL =
+  process.env.REACT_APP_ADMIN_LOGIN_URL ||
+  "https://gestion-baskin.vercel.app/admin/login";
+
+const EyeOpenIcon = () => (
+  <svg
+    aria-hidden="true"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const EyeClosedIcon = () => (
+  <svg
+    aria-hidden="true"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+    <path d="M1 1l22 22" />
+    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+  </svg>
+);
+
+const PasswordField = ({
+  id,
+  name,
+  label,
+  value,
+  onChange,
+  placeholder,
+  hint = null,
+}) => {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="input-group">
+      <label htmlFor={id} className="input-label">
+        {label}
+      </label>
+      <div className="password-field">
+        <input
+          id={id}
+          className="form-input password-field__input"
+          placeholder={placeholder}
+          type={visible ? "text" : "password"}
+          name={name}
+          value={value}
+          onChange={onChange}
+          autoComplete="new-password"
+          required
+        />
+        <button
+          type="button"
+          className="password-field__toggle"
+          onClick={() => setVisible((current) => !current)}
+          aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+          aria-pressed={visible}
+        >
+          {visible ? <EyeClosedIcon /> : <EyeOpenIcon />}
+        </button>
+      </div>
+      {hint ? <p className="input-hint">{hint}</p> : null}
+    </div>
+  );
+};
 
 const BrandHeader = ({ tagline = "Panel de administración de la organización" }) => (
   <div className="reset-page__brand">
@@ -32,7 +114,8 @@ const FormComponent = () => {
     password: "",
     confirmPassword: "",
   });
-  const [busy, setBusy] = useState(true);
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const { token, id } = queryString.parse(location.search);
 
@@ -42,13 +125,13 @@ const FormComponent = () => {
         `${API_BASE_URL}api/admin/verify-token?token=${token}&id=${id}`,
       );
       if (!data.success) setInvalidUser(data.message || data.error);
-      setBusy(false);
     } catch (verifyError) {
       if (verifyError?.response?.data) {
         const { data } = verifyError.response;
         setInvalidUser(data.message || data.error || "Enlace no válido");
       }
-      setBusy(false);
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -76,24 +159,24 @@ const FormComponent = () => {
     }
 
     try {
-      setBusy(true);
+      setIsSubmitting(true);
       const { data } = await axios.post(
         `${API_BASE_URL}api/admins/reset-password?token=${token}&id=${id}`,
         { password, id },
       );
 
-      setBusy(false);
       if (data.success) {
         setSuccess(true);
       } else {
         setError(data.message || "No se pudo restablecer la contraseña");
       }
     } catch (submitError) {
-      setBusy(false);
       if (submitError?.response?.data) {
         const { data } = submitError.response;
         setError(data.message || data.error || "Error al restablecer");
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -105,8 +188,21 @@ const FormComponent = () => {
           <div className="status-icon status-icon--success">✓</div>
           <h1 className="reset-card__title">Contraseña restablecida</h1>
           <p className="reset-card__description">
-            Tu contraseña de administrador fue actualizada. Ya podés iniciar
-            sesión con la nueva contraseña.
+            Tu contraseña de administrador fue actualizada correctamente. Podés
+            iniciar sesión cuando quieras con la nueva contraseña.
+          </p>
+          <button
+            type="button"
+            className="form-button form-button--primary"
+            onClick={() => {
+              window.location.href = ADMIN_LOGIN_URL;
+            }}
+          >
+            Ir al inicio de sesión
+          </button>
+          <p className="reset-card__footnote">
+            Este enlace de restablecimiento ya no es válido. Cerrá esta pestaña
+            si no vas a ingresar ahora.
           </p>
         </div>
       </PageShell>
@@ -138,7 +234,7 @@ const FormComponent = () => {
     );
   }
 
-  if (busy) {
+  if (isVerifying) {
     return (
       <PageShell>
         <BrandHeader />
@@ -169,41 +265,31 @@ const FormComponent = () => {
         ) : null}
 
         <form onSubmit={handleSubmit} className="reset-form">
-          <div className="input-group">
-            <label htmlFor="password" className="input-label">
-              Nueva contraseña
-            </label>
-            <input
-              id="password"
-              className="form-input"
-              placeholder="Ingresá tu nueva contraseña"
-              type="password"
-              name="password"
-              value={newPassword.password}
-              onChange={handleChange}
-              required
-            />
-            <p className="input-hint">Entre 8 y 20 caracteres</p>
-          </div>
+          <PasswordField
+            id="password"
+            name="password"
+            label="Nueva contraseña"
+            placeholder="Ingresá tu nueva contraseña"
+            value={newPassword.password}
+            onChange={handleChange}
+            hint="Entre 8 y 20 caracteres"
+          />
 
-          <div className="input-group">
-            <label htmlFor="confirmPassword" className="input-label">
-              Confirmar contraseña
-            </label>
-            <input
-              id="confirmPassword"
-              className="form-input"
-              placeholder="Repetí tu nueva contraseña"
-              type="password"
-              name="confirmPassword"
-              value={newPassword.confirmPassword}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          <PasswordField
+            id="confirmPassword"
+            name="confirmPassword"
+            label="Confirmar contraseña"
+            placeholder="Repetí tu nueva contraseña"
+            value={newPassword.confirmPassword}
+            onChange={handleChange}
+          />
 
-          <button type="submit" className="form-button form-button--primary">
-            Guardar contraseña
+          <button
+            type="submit"
+            className="form-button form-button--primary"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Guardando…" : "Guardar contraseña"}
           </button>
         </form>
       </div>
