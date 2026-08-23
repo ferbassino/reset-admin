@@ -10,15 +10,16 @@ const API_BASE_URL =
 const SUPPORT_EMAIL =
   process.env.REACT_APP_SUPPORT_EMAIL || "kinecatkinesiologia@gmail.com";
 
-const BrandHeader = ({ tagline = "Administración Kinecat" }) => (
+const BrandHeader = ({ tagline = "Panel de administración de la organización" }) => (
   <div className="reset-page__brand">
     <BrandLogo size="lg" />
+    <span className="reset-page__badge">Administración</span>
     {tagline ? <p className="reset-page__tagline">{tagline}</p> : null}
   </div>
 );
 
 const PageShell = ({ children }) => (
-  <div className="reset-page">
+  <div className="reset-page reset-page--admin">
     <div className="reset-page__container">{children}</div>
   </div>
 );
