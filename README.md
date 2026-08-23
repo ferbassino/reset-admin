@@ -27,6 +27,6 @@ Ver `.env.example`:
 
 Producción: `https://reset-admin-pass.vercel.app/`
 
-Configurar en Vercel las mismas variables y apuntar el proyecto a este directorio/repositorio.
+Repo: `https://github.com/ferbassino/reset-admin.git`
 
-En `kinapp_api`, el link del email usa `RESET_ADMIN_URL` (default: reset-admin-pass.vercel.app).
+Documentación del ecosistema: [`docs/RESET_PASSWORD.md`](../docs/RESET_PASSWORD.md) en el workspace.
